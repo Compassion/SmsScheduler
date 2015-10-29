@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Runtime.Serialization;
 using System.Text;
 using ConfigurationModels;
@@ -28,20 +29,20 @@ namespace SmsActioner
 
         public SmsTechWrapper(IRavenDocStore documentStore)
         {
+            var smsTechUrl = ConfigurationManager.AppSettings["SMSTechUrl"];
             DocumentStore = documentStore;
             using (var session = DocumentStore.GetStore().OpenSession("Configuration"))
             {
                 var smsTechConfiguration = session.Load<SmsTechConfiguration>("SmsTechConfig");
                 if (smsTechConfiguration == null)
                     throw new ArgumentException("Could not find sms tech configuration");
-                TransmitSmsClient = new TransmitSms.TransmitSmsWrapper(smsTechConfiguration.ApiKey, smsTechConfiguration.ApiSecret, @"https://api.transmitsms.com");
+                TransmitSmsClient = new TransmitSms.TransmitSmsWrapper(smsTechConfiguration.ApiKey, smsTechConfiguration.ApiSecret, smsTechUrl);
                 /* - ALL FOR CHECKING TRANSMIT SMS NUGET PACKAGE */
-                var baseUrl = @"https://api.transmitsms.com/";
+                var baseUrl = smsTechUrl;
                 var authHeader = string.Format("Basic {0}", Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", smsTechConfiguration.ApiKey, smsTechConfiguration.ApiSecret))));
                 RestClient = new RestClient(baseUrl);
                 RestClient.AddDefaultHeader("Authorization", authHeader);
                 RestClient.AddDefaultHeader("Accept", "application/json");
-                
             }
         }
 
